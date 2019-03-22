@@ -16,6 +16,7 @@ class WayfireWindowList : public WayfireWidget
     public:
     std::map<zwlr_foreign_toplevel_handle_v1*,
         std::unique_ptr<WayfireToplevel>> toplevels;
+    std::vector<Gtk::Button *> buttons;
 
     zwlr_foreign_toplevel_manager_v1 *manager;
     WayfireOutput *output;
@@ -35,7 +36,8 @@ class WayfireWindowList : public WayfireWidget
     void init(Gtk::HBox *container, wayfire_config *config);
     void add_output(WayfireOutput *output);
 
-    uint button_text_length;
+    Gtk::Button *dnd_button;
+    bool dragging;
 
     private:
     int32_t last_button_width = 100;

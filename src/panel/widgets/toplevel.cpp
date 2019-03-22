@@ -34,8 +34,8 @@ class WayfireToplevel::impl
     Gtk::Box *container;
     Gtk::Menu *menu;
     Gtk::MenuItem minimize, maximize, close;
-
     Glib::ustring app_id, title;
+
     public:
     WayfireWindowList *window_list;
 
@@ -57,8 +57,10 @@ class WayfireToplevel::impl
             sigc::mem_fun(this, &WayfireToplevel::impl::on_allocation_changed));
         button.property_scale_factor().signal_changed()
             .connect(sigc::mem_fun(this, &WayfireToplevel::impl::on_scale_update));
-        button.signal_button_press_event().connect(
+        button.signal_button_press_event().connect_notify(
             sigc::mem_fun(this, &WayfireToplevel::impl::on_button_press_event));
+        button.signal_motion_notify_event().connect_notify(
+            sigc::mem_fun(this, &WayfireToplevel::impl::on_motion_notify_event));
 
         minimize.set_label("Minimize");
         maximize.set_label("Maximize");
@@ -76,21 +78,87 @@ class WayfireToplevel::impl
 
         this->window_list = window_list;
         this->container = &container;
+        window_list->buttons.push_back(&button);
     }
 
-    bool on_button_press_event(GdkEventButton* event)
+    void on_button_press_event(GdkEventButton* event)
     {
-        if ((event->type == GDK_BUTTON_PRESS) && (event->button == 3))
+        if (event->type == GDK_BUTTON_PRESS)
         {
-            if(!menu->get_attach_widget())
-                menu->attach_to_widget(button);
+            window_list->dragging = false;
+            if (event->button == 3)
+            {
+                if(!menu->get_attach_widget())
+                    menu->attach_to_widget(button);
 
-            menu->popup(event->button, event->time);
-            menu->show_all();
-            return true; //It has been handled.
+                menu->popup(event->button, event->time);
+                menu->show_all();
+            }
+        }
+    }
+
+    void on_motion_notify_event(GdkEventMotion* event)
+    {
+        /* If there is only one button, it doesn't need reordering.
+         * This function isn't called if there are no buttons. */
+        if (window_list->buttons.size() < 2)
+            return;
+
+        if (window_list->dragging)
+        {
+            /* When these conditions are met, run the code to reorder */
+            if (button.gobj() != window_list->dnd_button->gobj() || event->x > button.get_allocated_width() || event->x < 0)
+            {
+                int i = 0, dir = 1;
+                Gtk::Button *last_button;
+
+                /* Walk the list of buttons */
+                for (auto b : window_list->buttons)
+                {
+                    /* If the button is dragged outside the buttons area on the right, do nothing */
+                    if (event->x > button.get_allocated_width() && (uint) i == window_list->buttons.size() - 1)
+                        return;
+
+                    if (window_list->dnd_button->gobj() == b->gobj())
+                    {
+                        /* If i is 0, last_button will not be valid. Choose dir = 1 in this case, which means
+                         * move the button to the right. If dnd_button is 0, this means it is leftmost,
+                         * so we can only go right anyway */
+                        if (i != 0 && (button.gobj() == last_button->gobj() || event->x < 0))
+                        {
+                            dir = -1;
+                        }
+                        else
+                        {
+                            /* If the button is dragged outside the buttons area on the left, do nothing */
+                            if (event->x < 0 && i == 0)
+                                return;
+                            dir = 1;
+                        }
+                        /* Remove the button being dragged */
+                        window_list->buttons.erase(window_list->buttons.begin() + i);
+                        break;
+                    }
+
+                    i++;
+                    last_button = b;
+                }
+                /* Reinsert the button into the list taking direction into consideration */
+                window_list->buttons.insert(window_list->buttons.begin() + (i + dir), window_list->dnd_button);
+                /* Remove all buttons from the container */
+                for (auto c : container->get_children())
+                    container->remove(*c);
+                /* Add them back in the order of the list */
+                for (auto b : window_list->buttons)
+                    container->add(*b);
+                container->show_all();
+	    }
         }
         else
-            return false;
+        {
+            window_list->dragging = true;
+            window_list->dnd_button = &button;
+        }
     }
 
     bool on_menu_minimize(GdkEventButton* event)
@@ -311,6 +379,14 @@ class WayfireToplevel::impl
 
     void handle_toplevel_closed()
     {
+        int i = 0;
+        for (auto b : window_list->buttons)
+        {
+            if (button.gobj() == b->gobj())
+                break;
+            i++;
+        }
+        window_list->buttons.erase(window_list->buttons.begin() + i);
         delete menu;
     }
 };

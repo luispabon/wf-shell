@@ -78,7 +78,6 @@ class WayfireToplevel::impl
 
         this->window_list = window_list;
         this->container = &container;
-        window_list->buttons.push_back(&button);
     }
 
     void on_button_press_event(GdkEventButton* event)
@@ -357,34 +356,45 @@ class WayfireToplevel::impl
         //zwlr_foreign_toplevel_handle_v1_destroy(handle);
     }
 
+    void remove_from_buttons_list()
+    {
+        int i = 0;
+        for (auto b : window_list->buttons)
+        {
+            if (button.gobj() == b->gobj())
+            {
+                window_list->buttons.erase(window_list->buttons.begin() + i);
+                break;
+            }
+            i++;
+        }
+    }
 
     void handle_output_enter(wl_output *output)
     {
-        if (window_list->output->handle == output)
-        {
-            container->add(button);
-            container->show_all();
-        }
+        if (window_list->output->handle != output)
+            return;
+
+        container->add(button);
+        container->show_all();
+
+        window_list->buttons.push_back(&button);
 
         update_menu_item_text();
     }
 
     void handle_output_leave(wl_output *output)
     {
-        if (window_list->output->handle == output)
-            container->remove(button);
+        if (window_list->output->handle != output)
+            return;
+
+        container->remove(button);
+        remove_from_buttons_list();
     }
 
     void handle_toplevel_closed()
     {
-        int i = 0;
-        for (auto b : window_list->buttons)
-        {
-            if (button.gobj() == b->gobj())
-                break;
-            i++;
-        }
-        window_list->buttons.erase(window_list->buttons.begin() + i);
+        remove_from_buttons_list();
         delete menu;
     }
 };

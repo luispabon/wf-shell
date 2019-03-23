@@ -121,20 +121,18 @@ class WayfireToplevel::impl
 
                     if (window_list->dnd_button->gobj() == b->gobj())
                     {
+                        /* If the button is dragged outside the buttons area on the left, do nothing */
+                        if (i == 0 && event->x < 0)
+                            return;
+
                         /* If i is 0, last_button will not be valid. Choose dir = 1 in this case, which means
                          * move the button to the right. If dnd_button is 0, this means it is leftmost,
                          * so we can only go right anyway */
                         if (i != 0 && (button.gobj() == last_button->gobj() || event->x < 0))
-                        {
                             dir = -1;
-                        }
                         else
-                        {
-                            /* If the button is dragged outside the buttons area on the left, do nothing */
-                            if (event->x < 0 && i == 0)
-                                return;
                             dir = 1;
-                        }
+
                         /* Remove the button being dragged */
                         window_list->buttons.erase(window_list->buttons.begin() + i);
                         break;

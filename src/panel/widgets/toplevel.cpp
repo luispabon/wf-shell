@@ -31,7 +31,7 @@ class WayfireToplevel::impl
     Gtk::HBox button_contents;
     Gtk::Image image;
     Gtk::Label label;
-    Gtk::Box *container;
+    Gtk::HBox *container;
     Gtk::Menu *menu;
     Gtk::MenuItem minimize, maximize, close;
     Glib::ustring app_id, title;

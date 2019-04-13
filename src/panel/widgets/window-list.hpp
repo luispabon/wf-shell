@@ -16,7 +16,6 @@ class WayfireWindowList : public WayfireWidget
     public:
     std::map<zwlr_foreign_toplevel_handle_v1*,
         std::unique_ptr<WayfireToplevel>> toplevels;
-    std::vector<Gtk::Button *> buttons;
 
     zwlr_foreign_toplevel_manager_v1 *manager;
     WayfireOutput *output;

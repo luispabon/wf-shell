@@ -98,57 +98,40 @@ class WayfireToplevel::impl
 
     void on_motion_notify_event(GdkEventMotion* event)
     {
+        auto children = container->get_children();
+
         /* If there is only one button, it doesn't need reordering.
          * This function isn't called if there are no buttons. */
-        if (window_list->buttons.size() < 2)
+        if (children.size() < 2)
             return;
 
         if (window_list->dragging)
         {
-            /* When these conditions are met, run the code to reorder */
-            if (button.gobj() != window_list->dnd_button->gobj() || event->x > button.get_allocated_width() || event->x < 0)
+            auto width = button.get_allocated_width();
+
+            if (event->x > width || event->x < 0)
             {
-                int i = 0, dir = 1;
-                Gtk::Button *last_button;
+                uint i = 0;
 
-                /* Walk the list of buttons */
-                for (auto b : window_list->buttons)
+                /* If dragged beyond the left or right of the window list,
+                 * do nothing */
+                if (button.gobj() == GTK_BUTTON(children[0]->gobj()) && event->x < 0 ||
+                    button.gobj() == GTK_BUTTON(children[children.size() - 1]->gobj()) && event->x > width)
+                    return;
+
+                /* Find the grabbed window in the list */
+                for (auto c : children)
                 {
-                    /* If the button is dragged outside the buttons area on the right, do nothing */
-                    if (event->x > button.get_allocated_width() && (uint) i == window_list->buttons.size() - 1)
-                        return;
-
-                    if (window_list->dnd_button->gobj() == b->gobj())
-                    {
-                        /* If the button is dragged outside the buttons area on the left, do nothing */
-                        if (i == 0 && event->x < 0)
-                            return;
-
-                        /* If i is 0, last_button will not be valid. Choose dir = 1 in this case, which means
-                         * move the button to the right. If dnd_button is 0, this means it is leftmost,
-                         * so we can only go right anyway */
-                        if (i != 0 && (button.gobj() == last_button->gobj() || event->x < 0))
-                            dir = -1;
-                        else
-                            dir = 1;
-
-                        /* Remove the button being dragged */
-                        window_list->buttons.erase(window_list->buttons.begin() + i);
+                    if (GTK_BUTTON(c->gobj()) == button.gobj())
                         break;
-                    }
-
                     i++;
-                    last_button = b;
                 }
-                /* Reinsert the button into the list taking direction into consideration */
-                window_list->buttons.insert(window_list->buttons.begin() + (i + dir), window_list->dnd_button);
-                /* Remove all buttons from the container */
-                for (auto c : container->get_children())
-                    container->remove(*c);
-                /* Add them back in the order of the list */
-                for (auto b : window_list->buttons)
-                    container->add(*b);
-                container->show_all();
+
+                /* Compute new position based on old position */
+                i += event->x / width;
+
+                /* Reorder the button in the list */
+                container->reorder_child(*window_list->dnd_button, i);
 	    }
         }
         else
@@ -356,20 +339,6 @@ class WayfireToplevel::impl
         //zwlr_foreign_toplevel_handle_v1_destroy(handle);
     }
 
-    void remove_from_buttons_list()
-    {
-        int i = 0;
-        for (auto b : window_list->buttons)
-        {
-            if (button.gobj() == b->gobj())
-            {
-                window_list->buttons.erase(window_list->buttons.begin() + i);
-                break;
-            }
-            i++;
-        }
-    }
-
     void handle_output_enter(wl_output *output)
     {
         if (window_list->output->handle != output)
@@ -377,8 +346,6 @@ class WayfireToplevel::impl
 
         container->add(button);
         container->show_all();
-
-        window_list->buttons.push_back(&button);
 
         update_menu_item_text();
     }
@@ -389,12 +356,10 @@ class WayfireToplevel::impl
             return;
 
         container->remove(button);
-        remove_from_buttons_list();
     }
 
     void handle_toplevel_closed()
     {
-        remove_from_buttons_list();
         delete menu;
     }
 };

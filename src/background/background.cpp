@@ -13,15 +13,9 @@
 
 #include <gtk-utils.hpp>
 #include <wf-shell-app.hpp>
+#include <animation.hpp>
 
 #include "background.hpp"
-
-/* TODO: Get output refresh rate and compute this value
- * 1000 msecs / 60Hz */
-#define BACKGROUND_FADE_TIMEOUT 16
-/* TODO: Compute from user defined target fade time and output refresh rate
- * 1.0 / (USER_DEFINED_TARGET_FADE_TIME / BACKGROUND_FADE_TIMEOUT) */
-#define ALPHA_STEP 0.015625
 
 
 Glib::RefPtr<Gdk::Pixbuf>
@@ -44,20 +38,24 @@ BackgroundDrawingArea::on_draw(const Cairo::RefPtr<Cairo::Context>& cr)
 {
     auto pbuf = background->pbuf;
     auto pbuf2 = background->pbuf2;
-    auto alpha = background->alpha;
+    auto animation = background->fade_animation;
+    auto alpha = animation.progress();
+
+    if (animation.running())
+        this->queue_draw();
 
     Gdk::Cairo::set_source_pixbuf(cr, pbuf, 0, 0);
     cr->rectangle(0, 0, pbuf->get_width(), pbuf->get_height());
     cr->paint_with_alpha(alpha);
 
     if (!pbuf2)
-        return true;
+        return false;
 
     Gdk::Cairo::set_source_pixbuf(cr, pbuf2, 0, 0);
     cr->rectangle(0, 0, pbuf2->get_width(), pbuf2->get_height());
     cr->paint_with_alpha(1.0 - alpha);
 
-    return true;
+    return false;
 }
 
 BackgroundDrawingArea::BackgroundDrawingArea(WayfireBackground *background)
@@ -99,28 +97,9 @@ WayfireBackground::handle_output_resize(uint32_t width, uint32_t height)
 }
 
 bool
-WayfireBackground::background_transition_frame(int timer)
-{
-    alpha += ALPHA_STEP;
-
-    if (alpha > 1.0)
-    {
-        alpha = 0.0;
-        return false;
-    }
-
-    auto gdk_window = window.get_window();
-    Gdk::Rectangle r(0, 0, window.get_allocation().get_width(),
-        window.get_allocation().get_height());
-    gdk_window->invalidate_rect(r, false);
-
-    return true;
-}
-
-bool
 WayfireBackground::change_background(int timer)
 {
-    if (alpha != 0.0)
+    if (fade_animation.running())
         return true;
 
     background[1] = background[0];
@@ -146,9 +125,8 @@ WayfireBackground::change_background(int timer)
                               output_height * scale,
                               Gdk::INTERP_BILINEAR);
 
-    frame_handler_conn = Glib::signal_timeout().connect(sigc::bind(sigc::mem_fun(this,
-        &WayfireBackground::background_transition_frame), 1), BACKGROUND_FADE_TIMEOUT,
-        Glib::PRIORITY_HIGH_IDLE + 20);
+    fade_animation.start(0.0, 1.0);
+    drawing_area.queue_draw();
 
     return true;
 }
@@ -221,10 +199,9 @@ WayfireBackground::load_next_background(std::string &path, uint current)
 void
 WayfireBackground::reset_background()
 {
-    alpha = 0.0;
+    fade_animation.start(0.0, 0.0);
     images.clear();
     change_bg_conn.disconnect();
-    frame_handler_conn.disconnect();
     background[0] = background[1] = 0;
     pbuf.clear();
     pbuf2.clear();
@@ -251,10 +228,6 @@ WayfireBackground::set_background()
                 throw std::exception();
         }
 
-        frame_handler_conn = Glib::signal_timeout().connect(sigc::bind(sigc::mem_fun(this,
-            &WayfireBackground::background_transition_frame), 1), BACKGROUND_FADE_TIMEOUT,
-            Glib::PRIORITY_HIGH_IDLE + 20);
-
         scale = window.get_scale_factor();
         pbuf = pbuf->scale_simple(output_width * scale,
                                   output_height * scale,
@@ -270,6 +243,9 @@ WayfireBackground::set_background()
             change_bg_conn = Glib::signal_timeout().connect(sigc::bind(sigc::mem_fun(
                 this, &WayfireBackground::change_background), 0), cycle_timeout);
         }
+
+        fade_animation.start(0.0, 1.0);
+        drawing_area.queue_draw();
     } catch (...)
     {
         window.remove();
@@ -312,6 +288,7 @@ WayfireBackground::setup_window()
     cycle_timeout_updated = [=] () { reset_cycle_timeout(); };
     background_image->add_updated_handler(&image_updated);
     background_cycle_timeout->add_updated_handler(&cycle_timeout_updated);
+    fade_animation = wf_duration(new_static_option("1000"), wf_animation::linear);
 
     window.property_scale_factor().signal_changed().connect(
         sigc::mem_fun(this, &WayfireBackground::set_background));

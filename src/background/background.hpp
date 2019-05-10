@@ -28,7 +28,7 @@ class WayfireBackground
     uint background[2] = {0};
     int output_width, output_height;
     std::vector<std::string> images;
-    sigc::connection change_bg_conn, frame_handler_conn;
+    sigc::connection change_bg_conn;
 
     wf_option background_image, background_cycle_timeout;
     wf_option_callback image_updated, cycle_timeout_updated;
@@ -46,7 +46,7 @@ class WayfireBackground
     void setup_window();
 
     public:
-    double alpha = 0.0;
+    wf_duration fade_animation;
     Glib::RefPtr<Gdk::Pixbuf> pbuf, pbuf2;
     WayfireBackground(WayfireShellApp *app, WayfireOutput *output);
     ~WayfireBackground();

@@ -8,10 +8,11 @@
 #include "xdg-output-unstable-v1-client-protocol.h"
 #include "wayfire-shell-client-protocol.h"
 
-struct WayfireOutput;
+class WayfireOutput;
 using output_callback = std::function<void(WayfireOutput*)>;
-struct WayfireDisplay
+class WayfireDisplay
 {
+    public:
     wl_display    *display = nullptr;
     wl_seat       *default_seat = nullptr;
 
@@ -25,8 +26,9 @@ struct WayfireDisplay
     output_callback new_output_callback;
 };
 
-struct WayfireOutput
+class WayfireOutput
 {
+    public:
     WayfireDisplay *display;
 
     wl_output *handle = nullptr;

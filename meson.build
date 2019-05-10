@@ -18,7 +18,7 @@ wayland_protos = dependency('wayland-protocols')
 gtkmm          = dependency('gtkmm-3.0')
 wfconfig       = dependency('wf-config') #TODO fallback submodule
 
-add_project_arguments(['-Wno-pedantic', '-Wno-unused-parameter', '-Wno-parentheses', '-Wno-cast-function-type'], language: 'cpp')
+add_project_arguments(['-Wno-pedantic', '-Wno-unused-parameter', '-Wno-parentheses'], language: 'cpp')
 
 icon_dir = join_paths(get_option('prefix'), 'share', 'wayfire', 'icons')
 add_global_arguments('-DICONDIR="' + icon_dir + '"', language : 'cpp')

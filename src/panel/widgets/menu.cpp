@@ -231,11 +231,35 @@ void WayfireMenu::on_popover_shown()
 bool WayfireMenu::update_icon()
 {
     int size = menu_size->as_int() / LAUNCHERS_ICON_SCALE;
+    Glib::RefPtr<Gdk::Pixbuf> ptr_pbuff;
+    bool error = false;
 
     button->set_size_request(size, 0);
-    auto ptr_pbuff = Gdk::Pixbuf::create_from_file(menu_icon->as_string(),
-        size * main_image.get_scale_factor(),
-        size * main_image.get_scale_factor());
+    try
+    {
+        ptr_pbuff = Gdk::Pixbuf::create_from_file(menu_icon->as_string(),
+            size * main_image.get_scale_factor(),
+            size * main_image.get_scale_factor());
+    }
+    catch(Glib::FileError)
+    {
+        std::cout << "Error loading file: " << menu_icon->as_string() << std::endl;
+        error = true;
+    }
+    catch(Gdk::PixbufError)
+    {
+        std::cout << "Pixbuf error: " << menu_icon->as_string() << std::endl;
+        error = true;
+    }
+
+
+    if (error)
+    {
+        std::cout << "Loading default icon: " << default_icon << std::endl;
+        ptr_pbuff = Gdk::Pixbuf::create_from_file(default_icon,
+            size * main_image.get_scale_factor(),
+            size * main_image.get_scale_factor());
+    }
 
     if (!ptr_pbuff)
         return false;
@@ -292,7 +316,7 @@ void WayfireMenu::update_popover_layout()
 void WayfireMenu::init(Gtk::HBox *container, wayfire_config *config)
 {
     auto config_section = config->get_section("panel");
-    menu_icon = config_section->get_option("menu_icon", ICONDIR "/wayfire.png");
+    menu_icon = config_section->get_option("menu_icon", default_icon);
 
     menu_size = config_section->get_option("launcher_size",
         std::to_string(DEFAULT_ICON_SIZE));

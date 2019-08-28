@@ -233,7 +233,7 @@ bool WayfireMenu::update_icon()
     int size = menu_size->as_int() / LAUNCHERS_ICON_SCALE;
 
     button->set_size_request(size, 0);
-    auto ptr_pbuff = Gdk::Pixbuf::create_from_file(ICONDIR "/wayfire.png",
+    auto ptr_pbuff = Gdk::Pixbuf::create_from_file(menu_icon->as_string(),
         size * main_image.get_scale_factor(),
         size * main_image.get_scale_factor());
 
@@ -292,6 +292,7 @@ void WayfireMenu::update_popover_layout()
 void WayfireMenu::init(Gtk::HBox *container, wayfire_config *config)
 {
     auto config_section = config->get_section("panel");
+    menu_icon = config_section->get_option("menu_icon", ICONDIR "/wayfire.png");
 
     menu_size = config_section->get_option("launcher_size",
         std::to_string(DEFAULT_ICON_SIZE));

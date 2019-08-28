@@ -70,7 +70,7 @@ class WayfireMenu : public WayfireWidget
     void update_popover_layout();
 
     wf_option fuzzy_search_enabled;
-    wf_option menu_size;
+    wf_option menu_icon, menu_size;
     wf_option_callback menu_size_changed;
 
     public:

@@ -317,6 +317,10 @@ void WayfireMenu::init(Gtk::HBox *container, wayfire_config *config)
 {
     auto config_section = config->get_section("panel");
     menu_icon = config_section->get_option("menu_icon", default_icon);
+    menu_icon_changed = [=] () {
+        update_icon();
+    };
+    menu_icon->add_updated_handler(&menu_icon_changed);
 
     menu_size = config_section->get_option("launcher_size",
         std::to_string(DEFAULT_ICON_SIZE));

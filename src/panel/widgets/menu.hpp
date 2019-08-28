@@ -73,7 +73,7 @@ class WayfireMenu : public WayfireWidget
     wf_option menu_icon, menu_size;
     wf_option_callback menu_icon_changed;
     wf_option_callback menu_size_changed;
-    std::string default_icon = ICONDIR "/wayfire.png";
+    std::string default_icon;
 
     public:
     void init(Gtk::HBox *container, wayfire_config *config) override;

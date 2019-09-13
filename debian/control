@@ -1,26 +1,19 @@
-Source: mako
+Source: wf-shell
 Section: x11
 Priority: optional
 Maintainer: Luis Pabon <luis.pabon@auronconsulting.co.uk>
 Build-Depends: debhelper (>= 11),
                       libwayland-dev,
-                      libinput-dev (>= 1.6.0),
-                      libcap-dev,
-                      libpcre3-dev,
-                      libpango1.0-dev,
-                      libcairo2-dev,
-                      libgdk-pixbuf2.0-dev,
-                      libdbus-1-dev (>= 1.10),
-                      libsystemd-dev (>= 239),
-                      wayland-protocols (>= 1.15),
+                      libwayland-client0,
+                      libgtkmm-3.0-dev,
+                      libwf-config,
+                      wayland-protocols (>= 1.12),
                       meson,
                       pkg-config
 Standards-Version: 4.3.0
-Homepage: https://github.com/emersion/mako
+Homepage: https://wayfire.org/
 
-Package: mako
+Package: wf-shell
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, libwlroots0 (>=0.4)
-Recommends: sway-backgrounds
-Suggests: swayidle, swaylock, swaybg
-Description: A lightweight notification daemon for Wayland.
+Description: A GTK3-based panel for wayfire.

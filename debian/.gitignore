@@ -1,0 +1,11 @@
+sway-backgrounds/
+tmp/
+usr/
+wf-shell/
+debhelper-build-stamp
+files
+*.log
+*.substvars
+.debhelper
+*.dirs
+*.install

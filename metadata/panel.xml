@@ -26,7 +26,20 @@
 		<default>true</default>
 	</option>
 	<option name="autohide_duration" type="int">
+		<_short>Autohide Duration</_short>
 		<default>300</default>
+	</option>
+	<option name="position" type="string">
+		<_short>Panel Position</_short>
+		<default>top</default>
+		<desc>
+			<value>top</value>
+			<_name>Top</_name>
+		</desc>
+		<desc>
+			<value>bottom</value>
+			<_name>Bottom</_name>
+		</desc>
 	</option>
 	<option name="layer" type="string">
 		<_short>Layer</_short>
@@ -150,6 +163,11 @@
 	<option name="menu_fuzzy_search" type="bool">
 		<_short>Use Fuzzy Search in Menu</_short>
 		<default>true</default>
+	</option>
+	<option name="menu_icon" type="string">
+		<_short>Menu Icon</_short>
+		<hint>file</hint>
+		<default></default>
 	</option>
 	</group>
 	<group>
